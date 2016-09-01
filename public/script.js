@@ -42,23 +42,42 @@ rApp.config(function($routeProvider) {
         });
 });
 
-//defining a service using module.service. 
-//begin with creating an independent function
-function techServiceFunction(){
+
+// ##################### TechService ############################
+rApp.service('TechService', ['$http', function($http){
   var preserveTechRec = {};
-  this.getTech = function(){return preserveTechRec;}
-  this.setTech = function(mytech){preserveTechRec = mytech;}
+  var techSvc = this;
+  techSvc.getTech = function(){return preserveTechRec;}
+  techSvc.setTech = function(mytech){preserveTechRec = mytech;}
 
   var isLoggedIN = false;
-  this.getLoggedIN = function(){
+  techSvc.getLoggedIN = function(){
     return isLoggedIN;
   }
-  this.setLoggedIN = function(loginsStatus){isLoggedIN = loginsStatus;}
-}
-  
-//service: create a service on the basis of function
-rApp.service('TechService', [techServiceFunction]);
+  techSvc.setLoggedIN = function(loginsStatus){isLoggedIN = loginsStatus;}
 
+
+  techSvc.fetchTechRecords = function(arg_techrecords) {
+  console.log("count = " + arg_techrecords.length);
+  var returnObj = {};
+  $http.get('/console').then(
+        function(response) {
+          returnObj.techRecords = response.data;
+          returnObj.message = 'fetch succeeded';
+          arg_techrecords = response.data;
+          console.log("records fetched in svc = " + returnObj.techRecords.length);
+        }, function(errResponse) {
+          returnObj.techRecords = [];
+          returnObj.message = 'Error while fetching tech records';
+          arg_techrecords = returnObj.techRecords;
+  });
+  };//techSvc.fetchTechRecords
+
+
+}]);//service
+// ##################### TechService ############################
+
+//--------------------------- loginController --------------------------------
 rApp.controller('loginController', 
   ['$http', 'TechService', '$location', function($http, tservice, $location) {
   var self = this;
@@ -82,27 +101,29 @@ rApp.controller('loginController',
       );//then
   };//self.loginSubmit 
 }]); //loginController
+//--------------------------- loginController --------------------------------------------
 
 
+//--------------------------- consoleController --------------------------------------------
 rApp.controller('consoleController', 
   ['$http', '$location', 'TechService', function($http, $location, TechService) {
-  var self = this;
-  self.techRecords = [];
-  self.loginStatus = TechService.getLoggedIN();
+  var cc = this;
+  cc.techRecords = [];
+  cc.loginStatus = TechService.getLoggedIN();
 
-  self.fetchTechRecords = function() {
+  cc.fetchTechRecords = function() {
     return $http.get('/console').then(
         function(response) {
-      self.techRecords = response.data;
-      self.message = 'fetch succeeded';
+      cc.techRecords = response.data;
+      cc.message = 'fetch succeeded';
     }, function(errResponse) {
-      self.message = 'Error while fetching tech records';
+      cc.message = 'Error while fetching tech records';
     });
-  };//self.fetchTechRecords
+  };//cc.fetchTechRecords
 
-  self.fetchTechRecords();
+  cc.fetchTechRecords();
 
-  self.editLinkClicked = function(event) {
+  cc.editLinkClicked = function(event) {
     var techToEdit = event.currentTarget.id;
     console.log(" Record to Edit=" + techToEdit);
 
@@ -112,22 +133,22 @@ rApp.controller('consoleController',
       }).then(
         function(response) {
           if(response.data){
-            self.message = JSON.stringify(response.data);
+            cc.message = JSON.stringify(response.data);
             //valueTech = response.data.tech;
             //valueDesc = response.data.description;
             TechService.setTech(response.data);  //response.data.tech
             console.log("******recordToEdit in consoleController=" + response.data.tech);
             $location.path('editTech');
           }else{
-            self.message = 'Record to edit unavailable';
-            console.log("******re" + self.message);
+            cc.message = 'Record to edit unavailable';
+            console.log("******re" + cc.message);
           };
           
         }
       );//then
   };//self.editLinkClicked 
 
-self.deleteLinkClicked = function(event) {
+cc.deleteLinkClicked = function(event) {
     var techToEdit = event.currentTarget.id;
     console.log(" Record to Edit=" + techToEdit);
 
@@ -137,18 +158,22 @@ self.deleteLinkClicked = function(event) {
       }).then(
         function(response) {
           if(response.data){
-            self.message = 'Record deleted successfully';
+            cc.message = 'Record deleted successfully';
+            //TechService.fetchTechRecords(cc.techRecords);
+            cc.fetchTechRecords();
           }else{
-            self.message = 'Record could not be deleted';
-            console.log("******Server response from edit save=" + self.message);
+            cc.message = 'Record could not be deleted';
+            console.log("******Server response from edit save=" + cc.message);
           };
         }
       );//then
   };//self.deleteLinkClicked 
 
 }]);//consoleController
+//--------------------------- consoleController --------------------------------------------
 
 
+//--------------------------- editController --------------------------------------------
 rApp.controller('editController', 
     ['$http', '$location', 'TechService', 
       function($http, $location, TechService) {
@@ -176,7 +201,10 @@ rApp.controller('editController',
       );//then
   };//self.editFormSubmit 
 }]);//editController
+//--------------------------- editController --------------------------------------------
 
+
+//--------------------------- addController --------------------------------------------
 rApp.controller('addController', 
     ['$http', '$location', 'TechService', 
       function($http, $location, TechService) {
@@ -202,4 +230,5 @@ rApp.controller('addController',
       );//then
   };//self.editFormSubmit 
 }]);//addController
+//--------------------------- addController --------------------------------------------
   

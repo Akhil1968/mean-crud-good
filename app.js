@@ -30,17 +30,13 @@ app.post('/add', routes.addHandler);
 //error handling
 app.use("*", function(req, res) {
     res.status(404);
-    res.render('message.handlebars', 
-    	{message:'<blockquote class="mainLines"><code> The page you are looking for is not available or may have been moved.</code> </blockquote>'}
-    	);
+    res.send("The page you are looking for is not available or may have been moved.");
 });
 
 app.use(function(error, req, res, next) {
     console.log(chalk.red('Error : 500::' + error))
     res.status(500);
-    res.render('message.handlebars', 
-    	{message:'<blockquote class="mainLines"><code>something went wrong as you tried to access this page</code>Probably this happened because there are some bugs in the application</blockquote>'}
-    	);
+    res.send("something went wrong as you tried to access this page. Probably this happened because there are some bugs in the application.");
 });
 
 var port = process.env.PORT || 3000;

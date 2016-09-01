@@ -39,16 +39,9 @@ exports.authHandler = function (req, res){
 
 
 exports.consoleHandler = function (req, res){
-  // if (req.session.loggedin){}else{
-  //   res.status(500);
-  //   res.send("Incorrect request");
-  //   return;
-  // }
-
   TechModel.find({}, function(err, techArray){
     if (!err){
       res.json(techArray);
-      //console.log("tech array being returned=" + JSON.stringify(techArray));
     } 
   }); //TechModel.find       
 }; //consoleHandler
@@ -134,10 +127,10 @@ exports.addHandler = function(req, res){
    newTech.save(function(err, savedUser){
      if(err){
      res.json(false);
-     console.log(techToEdit + " could not be added");
+     console.log(newTech.tech + " could not be added");
    }else{
      res.json(true);
-     console.log(techToEdit + " added successfully");
+     console.log(newTech.tech + " added successfully");
    } 
    }); //newTech.save
 }; //addHandler
