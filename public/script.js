@@ -10,69 +10,69 @@ rApp.config(function($routeProvider) {
             controller  : 'loginController',
             controllerAs : 'lController'
         })
-
+        // route for the login page
+        .when('/login', {
+            templateUrl : 'pages/login.html',
+            controller  : 'loginController',
+            controllerAs : 'lController'
+        })  
+        // route for the logout page
+        .when('/logout', {
+            templateUrl : 'pages/login.html',
+            controller  : 'logoutController',
+            controllerAs : 'lController'
+        })          
         // route for the console page
         .when('/console', {
             templateUrl : 'pages/console.html',
             controller  : 'consoleController',
             controllerAs : 'cController'
         })            
-		
-		    // route for the login page
-        .when('/login', {
-            templateUrl : 'pages/login.html',
-            controller  : 'loginController',
-            controllerAs : 'lController'
-        })		
-
-
+	
         // route for the add page
         .when('/addTech', {
             templateUrl : 'pages/add.html',
             controller  : 'addController',
             controllerAs : 'aController'
         })    
-
-
         // route for the edit page
-        .when('/editTech', {
+        .when('/editTech/:editTech', {
             templateUrl : 'pages/edit.html',
             controller  : 'editController',
             controllerAs : 'eController'
+        })
+        // route for the delete page
+        .when('/deleteTech/:delTech', {
+            templateUrl : 'pages/delete.html',
+            controller  : 'deleteController',
+            controllerAs : 'delController'
         });
 });
 
 
 // ##################### TechService ############################
 rApp.service('TechService', ['$http', function($http){
-  var preserveTechRec = {};
+  var messages = [];
   var techSvc = this;
-  techSvc.getTech = function(){return preserveTechRec;}
-  techSvc.setTech = function(mytech){preserveTechRec = mytech;}
+
+  techSvc.getMessages = function(){
+    return messages;
+  }
+
+  techSvc.addMessage = function(aMsg){
+    messages.push(aMsg);
+  }
+
+  techSvc.clearMessages = function(){
+    messages = [];
+  }
 
   var isLoggedIN = false;
   techSvc.getLoggedIN = function(){
     return isLoggedIN;
   }
+
   techSvc.setLoggedIN = function(loginsStatus){isLoggedIN = loginsStatus;}
-
-
-  techSvc.fetchTechRecords = function(arg_techrecords) {
-  console.log("count = " + arg_techrecords.length);
-  var returnObj = {};
-  $http.get('/console').then(
-        function(response) {
-          returnObj.techRecords = response.data;
-          returnObj.message = 'fetch succeeded';
-          arg_techrecords = response.data;
-          console.log("records fetched in svc = " + returnObj.techRecords.length);
-        }, function(errResponse) {
-          returnObj.techRecords = [];
-          returnObj.message = 'Error while fetching tech records';
-          arg_techrecords = returnObj.techRecords;
-  });
-  };//techSvc.fetchTechRecords
-
 
 }]);//service
 // ##################### TechService ############################
@@ -80,29 +80,58 @@ rApp.service('TechService', ['$http', function($http){
 //--------------------------- loginController --------------------------------
 rApp.controller('loginController', 
   ['$http', 'TechService', '$location', function($http, tservice, $location) {
-  var self = this;
-  self.loginSubmit = function() {
+  var lc = this;
+  tservice.clearMessages();
+  lc.loginSubmit = function() {
       $http({method: 'post',
             url: '/auth',
-            data: self.login,
+            data: lc.login,
             headers: {'Content-Type': 'application/vnd.api+json'}
       }).then(
         function(response) {
           if(response.data){
-            self.message = 'Login succeessful';
+            lc.message = 'Login succeessful';
+            tservice.addMessage(lc.message);
             tservice.setLoggedIN(true);
             $location.path('console');
           }else{
-            self.message = 'Login Failed';
+            lc.message = 'Login Failed';
             tservice.setLoggedIN(false);
           };
-          console.log(self.message);
+          console.log(lc.message);
         }
       );//then
   };//self.loginSubmit 
 }]); //loginController
 //--------------------------- loginController --------------------------------------------
 
+//--------------------------- logoutController --------------------------------
+rApp.controller('logoutController', 
+  ['$http', 'TechService', '$location', function($http, tservice, $location) {
+  var lc = this;
+  tservice.clearMessages();
+
+      $http({method: 'get',
+            url: '/logout',
+            headers: {'Content-Type': 'application/vnd.api+json'}
+      }).then(
+        function(response) {
+          if(response.data){
+            lc.message = 'Logout succeessful';
+            tservice.addMessage(response.data);
+            tservice.addMessage(lc.message);
+            tservice.setLoggedIN(false);
+            $location.path('login');
+          }else{
+            lc.message = 'Logout Failed';
+            tservice.addMessage(lc.message);
+          };
+          console.log(lc.message);
+        }
+      );//then
+
+}]); //logoutController
+//--------------------------- logoutController --------------------------------------------
 
 //--------------------------- consoleController --------------------------------------------
 rApp.controller('consoleController', 
@@ -110,12 +139,13 @@ rApp.controller('consoleController',
   var cc = this;
   cc.techRecords = [];
   cc.loginStatus = TechService.getLoggedIN();
-
+  
   cc.fetchTechRecords = function() {
     return $http.get('/console').then(
         function(response) {
       cc.techRecords = response.data;
-      cc.message = 'fetch succeeded';
+      TechService.addMessage('Fetch succeeded');
+      cc.message = JSON.stringify(TechService.getMessages());
     }, function(errResponse) {
       cc.message = 'Error while fetching tech records';
     });
@@ -123,79 +153,57 @@ rApp.controller('consoleController',
 
   cc.fetchTechRecords();
 
-  cc.editLinkClicked = function(event) {
-    var techToEdit = event.currentTarget.id;
-    console.log(" Record to Edit=" + techToEdit);
-
-      $http({method: 'get',
-            url: '/edit?tech=' + techToEdit,
-            headers: {'Content-Type': 'application/vnd.api+json'}
-      }).then(
-        function(response) {
-          if(response.data){
-            cc.message = JSON.stringify(response.data);
-            //valueTech = response.data.tech;
-            //valueDesc = response.data.description;
-            TechService.setTech(response.data);  //response.data.tech
-            console.log("******recordToEdit in consoleController=" + response.data.tech);
-            $location.path('editTech');
-          }else{
-            cc.message = 'Record to edit unavailable';
-            console.log("******re" + cc.message);
-          };
-          
-        }
-      );//then
-  };//self.editLinkClicked 
-
-cc.deleteLinkClicked = function(event) {
-    var techToEdit = event.currentTarget.id;
-    console.log(" Record to Edit=" + techToEdit);
-
-      $http({method: 'get',
-            url: '/delete?tech=' + techToEdit,
-            headers: {'Content-Type': 'application/vnd.api+json'}
-      }).then(
-        function(response) {
-          if(response.data){
-            cc.message = 'Record deleted successfully';
-            //TechService.fetchTechRecords(cc.techRecords);
-            cc.fetchTechRecords();
-          }else{
-            cc.message = 'Record could not be deleted';
-            console.log("******Server response from edit save=" + cc.message);
-          };
-        }
-      );//then
-  };//self.deleteLinkClicked 
-
 }]);//consoleController
 //--------------------------- consoleController --------------------------------------------
 
 
 //--------------------------- editController --------------------------------------------
 rApp.controller('editController', 
-    ['$http', '$location', 'TechService', 
-      function($http, $location, TechService) {
-  var self = this;
-  console.log("******recordToEdit in editController=" + TechService.getTech());
-  self.loginStatus = TechService.getLoggedIN();
-  self.editTech = TechService.getTech();
-
-    self.editFormSubmit = function() {
-    console.log("Record to Save after edit (tech* description)= " + self.editTech.tech + "*" + self.editTech.description);
-
-      $http({method: 'post',
-            url: '/saveChanges',
-            data: self.editTech,
+    ['$http', '$location', 'TechService', '$routeParams',
+      function($http, $location, TechService, $routeParams) {
+  var ec = this;
+  var rec2Edit = $routeParams.editTech; 
+  TechService.clearMessages(); 
+  $http({method: 'get',
+            url: '/edit?tech=' + rec2Edit,
             headers: {'Content-Type': 'application/vnd.api+json'}
       }).then(
         function(response) {
           if(response.data){
-            self.message = 'Record Saved Successfully';
+            ec.message = JSON.stringify(response.data);
+            //valueTech = response.data.tech;
+            //valueDesc = response.data.description;
+            // TechService.setTech(response.data);  //response.data.tech
+            // self.editTech = TechService.getTech();
+            ec.editTech = response.data;
+            console.log("recordToEdit in editController=" + response.data.tech);
+            //TechService.addMessage("recordToEdit =" + response.data.tech);
           }else{
-            self.message = 'Record could not be saved';
-            console.log("******Server response from edit save=" + self.message);
+            ec.message = 'Record to edit unavailable';
+            TechService.addMessage(ec.message);
+            console.log("rec to edit" + ec.message);
+          };
+          
+        }
+  );//
+
+    ec.editFormSubmit = function() {
+    console.log("Record to Save after edit (tech* description)= (" + ec.editTech.tech + "*" + ec.editTech.description + ")");
+
+      $http({method: 'post',
+            url: '/saveChanges',
+            data: ec.editTech,
+            headers: {'Content-Type': 'application/vnd.api+json'}
+      }).then(
+        function(response) {
+          if(response.data){
+            ec.message = 'Record Saved Successfully';
+            TechService.addMessage(ec.message);
+            $location.path('console');
+          }else{
+            ec.message = 'Record could not be saved';
+            TechService.addMessage(ec.message);
+            console.log("******Server response from edit save=" + ec.message);
           };
         }
       );//then
@@ -203,31 +211,64 @@ rApp.controller('editController',
 }]);//editController
 //--------------------------- editController --------------------------------------------
 
+//--------------------------- deleteController --------------------------------------------
+rApp.controller('deleteController', 
+    ['$http', '$location', 'TechService', '$routeParams',
+      function($http, $location, TechService, $routeParams) {
+  var dc = this;
+  TechService.clearMessages(); 
+
+  $http({method: 'get',
+            url: '/delete?tech=' + $routeParams.delTech,
+            headers: {'Content-Type': 'application/vnd.api+json'}
+      }).then(
+        function(response) {
+          if(response.data){
+            dc.message = 'Record deleted successfully';
+            TechService.addMessage(dc.message);
+            $location.path('console');
+          }else{
+            dc.message = 'Record could not be deleted';
+            TechService.addMessage(dc.message);
+            console.log("******Server response from edit save=" + dc.message);
+          };
+        }
+  );//then
+
+}]);//deleteController
+//--------------------------- deleteController --------------------------------------------
 
 //--------------------------- addController --------------------------------------------
 rApp.controller('addController', 
     ['$http', '$location', 'TechService', 
       function($http, $location, TechService) {
-  var self = this;
-  self.addTech = {};
+  var ac = this;
 
-    self.addFormSubmit = function() {
-    console.log("Record to Save after add (tech* description)= " + self.addTech.tech + "*" + self.addTech.description);
+  TechService.clearMessages(); 
 
-      $http({method: 'post',
-            url: '/add',
-            data: self.addTech,
-            headers: {'Content-Type': 'application/vnd.api+json'}
-      }).then(
-        function(response) {
-          if(response.data){
-            self.message = 'Record added Successfully';
-          }else{
-            self.message = 'Record could not be added';
-            console.log("******Server response from add save=" + self.message);
-          };
-        }
-      );//then
+  ac.addTech = {};
+
+    ac.addFormSubmit = function() {
+    console.log("Record to Save after add (tech* description)= " 
+      + ac.addTech.tech + "*" + ac.addTech.description);
+
+    $http({method: 'post',
+          url: '/add',
+          data: ac.addTech,
+          headers: {'Content-Type': 'application/vnd.api+json'}
+    }).then(
+      function(response) {
+        if(response.data){
+          ac.message = 'Record added Successfully';
+          TechService.addMessage(ac.message);
+          $location.path('console');
+        }else{
+          ac.message = 'Record could not be added';
+          TechService.addMessage(ac.message);
+          console.log("******Server response from add save=" + ac.message);
+        };
+      }
+    );
   };//self.editFormSubmit 
 }]);//addController
 //--------------------------- addController --------------------------------------------

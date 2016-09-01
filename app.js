@@ -14,7 +14,6 @@ app.use(bodyparser.json({ type: 'application/vnd.api+json' }));
 app.use(bodyparser.urlencoded({extended:false}));
 app.use(session({secret: "secret",  resave : true,  saveUninitialized : false}));
 
-app.get('/', routes.loginPageHandler);
 app.get('/logout', routes.logoutPageHandler);
 app.post('/auth', routes.authHandler);
 app.get('/console', routes.consoleHandler);

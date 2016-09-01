@@ -5,16 +5,9 @@ var chalk = require('chalk');
 var app = require('../app');//expressJS allows circular dependencies
 
 
-
-exports.loginPageHandler = function (req, res){
-	res.render('login.handlebars', {LoggedIN: false});
-};//loginPageHandler
-
 exports.logoutPageHandler = function (req, res){
   req.session.destroy();
- 
-  res.render('message.handlebars', {message:'<span class="label label-success">You have logged-out successfully</span>', 
-                                   LoggedIN: false});
+  res.json("Session ended");
 };//logoutPageHandler
 
 exports.authHandler = function (req, res){
