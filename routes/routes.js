@@ -40,12 +40,7 @@ exports.consoleHandler = function (req, res){
 }; //consoleHandler
 
 
-
-exports.registerFormHandler = function(req, res){
-   res.render("register.handlebars", {LoggedIN: req.session.loggedin});
-}; //registerFormHandler
-
-exports.registerUserHandler = function(req, res){
+exports.regHandler = function(req, res){
    var newuser = new UserModel();
    newuser.username = req.body.username;;
    newuser.email = req.body.email;
@@ -54,14 +49,11 @@ exports.registerUserHandler = function(req, res){
    //save to db through model :: Add a record
    newuser.save(function(err, savedUser){
      if(err){
-       var message = "A user already exists with that username or email";
-       console.log(message);
-       res.render("register.handlebars", {errorMessage:message, 
-                                          LoggedIN: req.session.loggedin});
+       console.log("A user already exists with that username or email");
+       res.json(false);
      }else{
-       req.session.newuser = savedUser.username;
-       res.render('message.handlebars', {message:'<span class="label label-success">Registration successful</span>', 
-                                         LoggedIN: req.session.loggedin});
+      console.log("Resitration successful for user %s", savedUser.username);
+       res.json(true);
      }
    }); //newuser.save
 };//registerUserHandler

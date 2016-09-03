@@ -17,8 +17,7 @@ app.use(session({secret: "secret",  resave : true,  saveUninitialized : false}))
 app.get('/logout', routes.logoutPageHandler);
 app.post('/auth', routes.authHandler);
 app.get('/console', routes.consoleHandler);
-app.get('/registerForm', routes.registerFormHandler);
-app.post('/register', routes.registerUserHandler);
+app.post('/register', routes.regHandler);
 app.get('/edit', routes.editPageHandler);
 app.post('/saveChanges', routes.saveChangesHandler);
 app.get('/delete', routes.deletePageHandler);

@@ -1,82 +1,3 @@
-// also include ngRoute for all our routing needs
-var rApp = angular.module('meanRouteApp', ['ngRoute']);
-
-// configure our routes
-rApp.config(function($routeProvider) {
-    $routeProvider
-        // route for the login page
-        .when('/', {
-            templateUrl : 'pages/login.html',
-            controller  : 'loginController',
-            controllerAs : 'lController'
-        })
-        // route for the login page
-        .when('/login', {
-            templateUrl : 'pages/login.html',
-            controller  : 'loginController',
-            controllerAs : 'lController'
-        })  
-        // route for the logout page
-        .when('/logout', {
-            templateUrl : 'pages/login.html',
-            controller  : 'logoutController',
-            controllerAs : 'lController'
-        })          
-        // route for the console page
-        .when('/console', {
-            templateUrl : 'pages/console.html',
-            controller  : 'consoleController',
-            controllerAs : 'cController'
-        })            
-	
-        // route for the add page
-        .when('/addTech', {
-            templateUrl : 'pages/add.html',
-            controller  : 'addController',
-            controllerAs : 'aController'
-        })    
-        // route for the edit page
-        .when('/editTech/:editTech', {
-            templateUrl : 'pages/edit.html',
-            controller  : 'editController',
-            controllerAs : 'eController'
-        })
-        // route for the delete page
-        .when('/deleteTech/:delTech', {
-            templateUrl : 'pages/delete.html',
-            controller  : 'deleteController',
-            controllerAs : 'delController'
-        });
-});
-
-
-// ##################### TechService ############################
-rApp.service('TechService', ['$http', function($http){
-  var messages = [];
-  var techSvc = this;
-
-  techSvc.getMessages = function(){
-    return messages;
-  }
-
-  techSvc.addMessage = function(aMsg){
-    messages.push(aMsg);
-  }
-
-  techSvc.clearMessages = function(){
-    messages = [];
-  }
-
-  var isLoggedIN = false;
-  techSvc.getLoggedIN = function(){
-    return isLoggedIN;
-  }
-
-  techSvc.setLoggedIN = function(loginsStatus){isLoggedIN = loginsStatus;}
-
-}]);//service
-// ##################### TechService ############################
-
 //--------------------------- loginController --------------------------------
 rApp.controller('loginController', 
   ['$http', 'TechService', '$location', function($http, tservice, $location) {
@@ -132,6 +53,38 @@ rApp.controller('logoutController',
 
 }]); //logoutController
 //--------------------------- logoutController --------------------------------------------
+
+//--------------------------- registerController --------------------------------
+rApp.controller('registerController', 
+  ['$http', 'TechService', '$location', function($http, tservice, $location) {
+  var lc = this;
+  tservice.clearMessages();
+  var rc = this;
+  
+  rc.registerSubmit = function() {
+    $http({method: 'post',
+          url: '/register',
+          data: rc.user,
+          headers: {'Content-Type': 'application/vnd.api+json'}
+    }).then(
+      function(response) {
+        if(response.data){
+          rc.message = 'Registration succeessful';
+          tservice.addMessage(response.data);
+          tservice.addMessage(rc.message);
+          tservice.setLoggedIN(false);
+          $location.path('login');
+        }else{
+          rc.message = 'Registration Failed';
+          tservice.addMessage(rc.message);
+        };
+        console.log(rc.message);
+      }
+    );//then
+  } //rc.registerSubmit
+}]); //registerController
+//--------------------------- registerController --------------------------------------------
+
 
 //--------------------------- consoleController --------------------------------------------
 rApp.controller('consoleController', 
